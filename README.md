@@ -1,12 +1,11 @@
-[![Build Status](https://travis-ci.org/netguru/ember-cli-deploy-rollbar.svg?branch=master)](https://travis-ci.org/netguru/ember-cli-deploy-rollbar)
 
-# ember-cli-deploy-rollbar
+# airpr-honeybadger
 
-> An ember-cli-deploy plugin that first __integrates Rollbar to your application__ and second __uploads your source maps to Rollbar__.
+> An ember-cli-deploy plugin that first __integrates honeybadger to your application__ and second __uploads your source maps to honeybadger__.
 
-This plugin will integrate Rollbar into your `index.html` file and uploads generated source maps via Rollbar API. During upload of the source maps to Rollbar you must provide `source_code` string that will match the error raised in Rollbar with the same value. To do this, Rollbar snippet is injected into `index.html` after the revision data is generated with revision key as `source_code`. After all, the plugin uploads the source maps with the same revision key as injected into `index.html`.
+This plugin will integrate honeybadger into your `index.html` file and uploads generated source maps via honeybadger API. During upload of the source maps to honeybadger you must provide `source_code` string that will match the error raised in honeybadger with the same value. To do this, honeybadger snippet is injected into `index.html` after the revision data is generated with revision key as `source_code`. After all, the plugin uploads the source maps with the same revision key as injected into `index.html`.
 
-[You can take a look here how Rollbar defines its flow with source maps][5]
+[You can take a look here how honeybadger defines its flow with source maps][5]
 
 ## What is an ember-cli-deploy plugin?
 
@@ -23,7 +22,7 @@ To get up and running quickly, do the following:
 - Install this plugin
 
 ```bash
-$ ember install ember-cli-deploy-rollbar
+$ ember install airpr-honeybadger
 ```
 
 - Run the pipeline
@@ -36,16 +35,16 @@ $ ember deploy
 Run the following command in your terminal:
 
 ```bash
-ember install ember-cli-deploy-rollbar
+ember install airpr-honeybadger
 ```
 
 ## ember-cli-deploy Hooks Implemented
 
 For detailed information on what plugin hooks are and how they work, please refer to the [Plugin Documentation][6].
 
-- `willUpload` (inject Rollbar snippet)
+- `willUpload` (inject honeybadger snippet)
 - `upload` (upload source maps)
-- `didDeploy` (send information about deploy to Rollbar)
+- `didDeploy` (send information about deploy to honeybadger)
 
 ## Configuration Options
 
@@ -53,15 +52,15 @@ For detailed information on how configuration of plugins works, please refer to 
 
 ### accessToken (required)
 
-Rollbar client access token to trigger errors.
+honeybadger client access token to trigger errors.
 
 ### accessServerToken (required)
 
-Rollbar server access token to allow uploading source maps to your account.
+honeybadger server access token to allow uploading source maps to your account.
 
 ### minifiedPrependUrl (required)
 
-Rollbar demands to upload both source map and URL to minified file. This config let's you define the prepend to URL your assets will be available after upload. E.g. if you are using `ember-cli-deploy-s3`, add the same string as in `fingerprint/prepend` option in your `ember-cli-deploy` file.
+honeybadger demands to upload both source map and URL to minified file. This config let's you define the prepend to URL your assets will be available after upload. E.g. if you are using `ember-cli-deploy-s3`, add the same string as in `fingerprint/prepend` option in your `ember-cli-deploy` file.
 
 This property can be a string or a function returning a string or an array of strings, which is passed the deploy `context`. Use a function here if you want to add multiple sources for multiple deploy locations. A possible scenario would be that you deploy both by git hash and a production deploy:
 
@@ -76,42 +75,42 @@ minifiedPrependUrl: function(context) {
 
 ### enabled
 
-Defines internal `enabled` Rollbar config.
+Defines internal `enabled` honeybadger config.
 
 *Default:* `true`
 *Alternatives:* `false`
 
 ### environment
 
-Defines internal `environment` Rollbar config.
+Defines internal `environment` honeybadger config.
 
 *Default:* environment setting from ember-cli-deploy-build || `production`
 *Alternatives:* any other env
 
 ### captureUncaught
 
-Defines internal `captureUncaught` Rollbar config.
+Defines internal `captureUncaught` honeybadger config.
 
 *Default:* `true`
 *Alternatives:* `false`
 
 ### username
 
-Rollbar `local_username` config that is displayed in Deploys section.
+honeybadger `local_username` config that is displayed in Deploys section.
 
 *Default:* `unknown user`
 *Alternatives:* any string or function returning string
 
-### rollbarFileURI
+### honeybadgerFileURI
 
-Defines the URI to download the Rollbar JS file.
+Defines the URI to download the honeybadger JS file.
 
-*Default:* `https://d37gvrvc0wt4s1.cloudfront.net/js/v1.8/rollbar.min.js`
-*Alternatives:* any string that points to the file (e.g. https://mycdn.com/js/rollbar.min.js)
+*Default:* `//js.honeybadger.io/v0.5/honeybadger.min.js`
+*Alternatives:* any string that points to the file (e.g. https://mycdn.com/js/honeybadger.min.js)
 
 ### additionalFiles
 
-Defines additional sourcemap files to be uploaded to Rollbar. Use this if you build .js files other than `projectName.js` and `vendor.js`.
+Defines additional sourcemap files to be uploaded to honeybadger. Use this if you build .js files other than `projectName.js` and `vendor.js`.
 
 Set to an array of filenames excluding their extentions. For example in an app that builds `exta-functionality.js` and `additional-library.js` set to `['exta-functionality', 'additional-library']`.
 
@@ -133,13 +132,13 @@ The following properties are expected to be present on the deployment `context` 
 
 ## Known issues
 * You must enable source maps in your `ember-cli-build.js` file, even in `production` env. However, you don't need to upload them anywhere (they won't be available online) - they are only needed during `upload` phase in deploy pipeline.
-* If you are using gzipping, make sure that you are not gzipping source maps - Rollbar will not accept gzipped files.
+* If you are using gzipping, make sure that you are not gzipping source maps - honeybadger will not accept gzipped files.
 * If you bump in any other issue in your deployment flow, give me a sign and I'll try to make this addon more flexible for you.
 
 [1]: http://ember-cli-deploy.com/docs/v0.6.x/ "Plugin Documentation"
 [2]: https://github.com/ember-cli-deploy/ember-cli-deploy-build "ember-cli-deploy-build"
 [3]: https://github.com/ember-cli/ember-cli-deploy "ember-cli-deploy"
 [4]: https://github.com/ember-cli-deploy/ember-cli-deploy-revision-data "ember-cli-deploy-revision-data"
-[5]: https://rollbar.com/docs/source-maps/ "Rollbar Documentation"
+[5]: https://docs.honeybadger.io/guides/source-maps.html "honeybadger Documentation"
 [6]: http://ember-cli-deploy.com/docs/v0.6.x/pipeline-hooks/ "Plugin Documentation"
 [7]: http://ember-cli-deploy.com/docs/v0.6.x/configuration-overview/ "Plugin Documentation"

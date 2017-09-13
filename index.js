@@ -12,11 +12,11 @@ var FormData = require('form-data');
 var BasePlugin = require('ember-cli-deploy-plugin');
 
 module.exports = {
-  name: 'ember-cli-deploy-rollbar',
+  name: 'airpr-honeybadger',
 
   createDeployPlugin: function(options) {
     var DeployPlugin = BasePlugin.extend({
-      name: options.name,
+      name: "honeybadger",
 
       defaultConfig: {
         projectName: function(context) {
@@ -32,35 +32,36 @@ module.exports = {
           return context.distDir;
         },
         environment: function(context) {
-          var rollbarConfig = context.config.rollbar.rollbarConfig;
+          var honeybadgerConfig = context.config.honeybadger.honeybadgerConfig;
           var buildConfig = context.config.build;
-          var environment = rollbarConfig ? rollbarConfig.environment : false;
+          var environment = honeybadgerConfig ? honeybadgerConfig.environment : false;
           return environment || buildConfig.environment || 'production';
         },
         enabled: function(context) {
-          var rollbarConfig = context.config.rollbar.rollbarConfig;
-          var enabled = rollbarConfig ? rollbarConfig.enabled : true;
+          var honeybadgerConfig = context.config.honeybadger.honeybadgerConfig;
+          var enabled = honeybadgerConfig ? honeybadgerConfig.enabled : true;
           return !(enabled === false);
         },
         captureUncaught: function(context) {
-          var rollbarConfig = context.config.rollbar.rollbarConfig;
-          var captureUncaught = rollbarConfig ? rollbarConfig.captureUncaught : true;
+          var honeybadgerConfig = context.config.honeybadger.honeybadgerConfig;
+          var captureUncaught = honeybadgerConfig ? honeybadgerConfig.captureUncaught : true;
           return !(captureUncaught === false);
         },
-        integrateRollbar: true,
+        integrateHoneybadger: true,
         additionalFiles: [],
-        rollbarFileURI: 'https://d37gvrvc0wt4s1.cloudfront.net/js/v1.9/rollbar.min.js'
+        honeybadgerFileURI: '//js.honeybadger.io/v0.5/honeybadger.min.js'
       },
       requiredConfig: ['accessToken', 'accessServerToken', 'minifiedPrependUrl'],
 
       willUpload: function(context) {
-        if(this.readConfig('integrateRollbar')) {
-          // setup rollbarConfig
-          var rollbarConfig = {
+        if(this.readConfig('integrateHoneybadger')) {
+          // setup honeybadgerConfig
+          var honeybadgerConfig = {
             accessToken: this.readConfig('accessToken'),
             enabled: this.readConfig('enabled'),
             captureUncaught: this.readConfig('captureUncaught'),
             environment: this.readConfig('environment'),
+            codeVersion: this.readConfig('revisionKey'),
             payload: {
               client: {
                 javascript: {
@@ -72,24 +73,23 @@ module.exports = {
             }
           };
 
-          var rollbarFileURI = this.readConfig('rollbarFileURI');
+          var honeybadgerFileURI = this.readConfig('honeybadgerFileURI');
 
-          // render rollbar snippet with fulfilled config
-          var htmlSnippetPath = path.join(__dirname, 'addon', 'rollbar.html');
+          // render honeybadger snippet with fulfilled config
+          var htmlSnippetPath = path.join(__dirname, 'addon', 'honeybadger.html');
           var htmlContent = fs.readFileSync(htmlSnippetPath, 'utf-8');
-          var snippetPath = path.join(__dirname, 'addon', 'snippet.js');
-          var snippetContent = fs.readFileSync(snippetPath, 'utf-8');
-          snippetContent = snippetContent.replace('ROLLBAR_JSFILE_URI', rollbarFileURI);
 
-          var rollbarSnippet = template(htmlContent)({
-            rollbarConfig: JSON.stringify(rollbarConfig),
-            rollbarSnippet: snippetContent
+          var honeybadgerSnippet = template(htmlContent)({
+            apiKey: honeybadgerConfig.accessToken,
+            environment: honeybadgerConfig.environment,
+            revision: honeybadgerConfig.codeVersion,
+            jsFile: honeybadgerFileURI
           });
 
-          // replace rollbar metatag with rollbar snippet in index.html
+          // replace honeybadger metatag with honeybadger snippet in index.html
           var indexPath = path.join(context.distDir, "index.html");
           var index = fs.readFileSync(indexPath, 'utf8');
-          index = index.replace('<meta name="rollbar"/>', rollbarSnippet);
+          index = index.replace('<meta name="honeybadger"/>', honeybadgerSnippet);
           fs.writeFileSync(indexPath, index);
         }
       },
@@ -118,17 +118,18 @@ module.exports = {
         var revisionKey = this.readConfig('revisionKey');
 
         for(var i = 0; i < projectFileJs.length; i++) {
-          // upload map to Rollbar using form-data
+          // upload map to honeybadger using form-data
 
           var mapFilePath = path.join(this.readConfig('distDir'), projectFileMap[i]);
+          var jsFilePath = path.join(this.readConfig('distDir'), projectFileJs[i]);
           var minifiedPrependUrl = this.readConfig('minifiedPrependUrl');
           if (typeof minifiedPrependUrl === 'function') {
             minifiedPrependUrl = minifiedPrependUrl(context);
           }
           [].concat(minifiedPrependUrl).forEach(function(url) {
             var formData = new FormData();
-            formData.append('access_token', accessServerToken);
-            formData.append('version', revisionKey);
+            formData.append('api_key', accessServerToken);
+            formData.append('revision', revisionKey);
             formData.append('minified_url', url + projectFileJs[i]);
             var fileSize = fs.statSync(mapFilePath)['size'];
             formData.append(
@@ -136,8 +137,15 @@ module.exports = {
               fs.createReadStream(mapFilePath),
               { knownLength: fileSize }
             );
+
+            fileSize = fs.statSync(jsFilePath)['size'];
+            formData.append(
+              'minified_file',
+              fs.createReadStream(jsFilePath),
+              { knownLength: fileSize }
+            );
             var promise = new RSVP.Promise(function(resolve, reject) {
-              formData.submit('https://api.rollbar.com/api/1/sourcemap', function(error, result) {
+              formData.submit('https://api.honeybadger.io/v1/source_maps', function(error, result) {
                 if(error) {
                   reject(error);
                 }
@@ -152,42 +160,6 @@ module.exports = {
           });
         };
         return RSVP.all(promiseArray);
-      },
-
-      didDeploy: function(context) {
-        var didDeployHook = this.readConfig('didDeploy');
-
-        if (didDeployHook) {
-          return didDeployHook.call(this, context);
-        }
-
-        var accessServerToken = this.readConfig('accessServerToken');
-        var environment = this.readConfig('environment');
-        var revision = this.readConfig('revisionKey');
-        var username = this.readConfig('username');
-
-        var formData = new FormData();
-
-        formData.append('access_token', accessServerToken);
-        formData.append('revision', revision);
-        formData.append('environment', environment);
-
-        if (username) {
-          formData.append('local_username', username);
-        }
-
-        return new RSVP.Promise(function(resolve, reject) {
-          formData.submit('https://api.rollbar.com/api/1/deploy', function(error, result) {
-            if (error) {
-              reject(error);
-            }
-            result.resume();
-
-            result.on('end', function() {
-              resolve();
-            });
-          });
-        });
       }
     });
 
@@ -196,7 +168,7 @@ module.exports = {
 
   contentFor: function(type) {
     if (type === 'head') {
-      return '<meta name="rollbar"/>';
+      return '<meta name="honeybadger"/>';
     }
   }
 };

@@ -3,7 +3,7 @@
 
 var assert  = require('ember-cli/tests/helpers/assert');
 
-describe('rollbar plugin', function() {
+describe('honeybadger plugin', function() {
   var subject;
 
   beforeEach(function() {
@@ -30,6 +30,6 @@ describe('rollbar plugin', function() {
   it('implements the correct contentFor func', function() {
     var headContent = subject.contentFor('head');
 
-    assert.equal(headContent, '<meta name="rollbar"/>');
+    assert.equal(headContent, '<meta name="honeybadger"/>');
   });
 });
