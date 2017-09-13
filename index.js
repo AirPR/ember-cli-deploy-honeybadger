@@ -8,6 +8,8 @@ var merge = require('lodash/object/merge');
 var template = require('lodash/string/template');
 var minimatch = require('minimatch');
 var FormData = require('form-data');
+var exec = require('child_process').exec;
+
 
 var BasePlugin = require('ember-cli-deploy-plugin');
 
@@ -114,7 +116,7 @@ module.exports = {
         }));
 
         var promiseArray = [];
-        var accessServerToken = this.readConfig('accessServerToken');
+        var accessToken = this.readConfig('accessToken');
         var revisionKey = this.readConfig('revisionKey');
 
         for(var i = 0; i < projectFileJs.length; i++) {
@@ -127,33 +129,20 @@ module.exports = {
             minifiedPrependUrl = minifiedPrependUrl(context);
           }
           [].concat(minifiedPrependUrl).forEach(function(url) {
-            var formData = new FormData();
-            formData.append('api_key', accessServerToken);
-            formData.append('revision', revisionKey);
-            formData.append('minified_url', url + projectFileJs[i]);
-            var fileSize = fs.statSync(mapFilePath)['size'];
-            formData.append(
-              'source_map',
-              fs.createReadStream(mapFilePath),
-              { knownLength: fileSize }
-            );
 
-            fileSize = fs.statSync(jsFilePath)['size'];
-            formData.append(
-              'minified_file',
-              fs.createReadStream(jsFilePath),
-              { knownLength: fileSize }
-            );
+            var curlArgs = ['https://api.honeybadger.io/v1/source_maps',
+                            '-F api_key=' + accessToken,
+                            '-F revision=' + revisionKey,
+                            '-F minified_url=' + url + projectFileJs[i],
+                            '-F source_map=@' + mapFilePath,
+                            '-F minified_file=@' + jsFilePath].join(" ");
             var promise = new RSVP.Promise(function(resolve, reject) {
-              formData.submit('https://api.honeybadger.io/v1/source_maps', function(error, result) {
-                if(error) {
+              exec('curl ' + curlArgs, function (error, stdout, stderr) {
+                if (error !== null) {
                   reject(error);
-                }
-                result.resume();
-
-                result.on('end', function() {
+                }else{
                   resolve();
-                });
+                }
               });
             });
             promiseArray.push(promise);
