@@ -9,7 +9,7 @@ var template = require('lodash/string/template');
 var minimatch = require('minimatch');
 var FormData = require('form-data');
 var exec = require('child_process').exec;
-
+var zlib = require('zlib');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
 
@@ -29,6 +29,9 @@ module.exports = {
         },
         distFiles: function(context) {
           return context.distFiles;
+        },
+        gzippedFiles: function(context) {
+          return context.gzippedFiles || []; // e.g. from ember-cli-deploy-gzip
         },
         distDir: function(context) {
           return context.distDir;
@@ -96,6 +99,22 @@ module.exports = {
         }
       },
 
+      _isFileGzipped(filePath) {
+        var gzippedFiles = this.readConfig('gzippedFiles');
+        return gzippedFiles.indexOf(filePath.replace("tmp/deploy-dist/", "")) >= 0;
+      },
+
+      _unzipPath(filePath){
+        var newPath = filePath + ".unzipped";
+        var readStream = fs.createReadStream(filePath);
+        var writeStream = fs.createWriteStream(newPath);
+
+        readStream
+          .pipe(zlib.createGunzip())
+          .pipe(writeStream);
+        return newPath;
+      },
+
       upload: function(context) {
         var distFiles = this.readConfig('distFiles');
         var projectName = this.readConfig('projectName');
@@ -128,7 +147,15 @@ module.exports = {
           if (typeof minifiedPrependUrl === 'function') {
             minifiedPrependUrl = minifiedPrependUrl(context);
           }
-          [].concat(minifiedPrependUrl).forEach(function(url) {
+          [].concat(minifiedPrependUrl).forEach((url)=> {
+
+            if(this._isFileGzipped(mapFilePath)){
+              mapFilePath = this._unzipPath(mapFilePath);
+            }
+
+            if(this._isFileGzipped(jsFilePath)){
+              jsFilePath = this._unzipPath(jsFilePath);
+            }
 
             var curlArgs = ['https://api.honeybadger.io/v1/source_maps',
                             '-F api_key=' + accessToken,
