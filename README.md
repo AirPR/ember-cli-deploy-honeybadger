@@ -1,5 +1,5 @@
 
-# airpr-honeybadger
+# ember-cli-deploy-honeybadger
 
 > An ember-cli-deploy plugin that first __integrates honeybadger to your application__ and second __uploads your source maps to honeybadger__.
 
@@ -22,7 +22,35 @@ To get up and running quickly, do the following:
 - Install this plugin
 
 ```bash
-$ ember install airpr-honeybadger
+$ ember install ember-cli-deploy-honeybadger
+```
+
+- Get your API key from [here](https://app.honeybadger.io/)
+
+- Place the following configuration into `config/deploy.js`
+
+```javascript
+ENV.honeybadger = {
+  apiKey: 'xxxxxx',
+  minifiedPrependUrl: 'https://some-cdn.mysite.com/',
+
+  // optional
+  environment: applicationEnvironment,
+  username: process.env.MY_DEPLOY_USERNAME
+};
+```
+
+- Build sourcemaps in production environment
+
+`ember-cli` builds sourcemaps only in development environment by default. In order to build them always, just add the following to your `EmberApp` options.
+
+See also: [ember-cli documentation](https://ember-cli.com/user-guide/#source-map)
+
+```javascript
+sourcemaps: {
+  enabled: true,
+  extensions: ['js']
+}
 ```
 
 - Run the pipeline
@@ -35,28 +63,24 @@ $ ember deploy
 Run the following command in your terminal:
 
 ```bash
-ember install airpr-honeybadger
+ember install ember-cli-deploy-honeybadger
 ```
 
 ## ember-cli-deploy Hooks Implemented
 
 For detailed information on what plugin hooks are and how they work, please refer to the [Plugin Documentation][6].
 
-- `willUpload` (inject honeybadger snippet)
-- `upload` (upload source maps)
+- `prepare` (inject honeybadger snippet)
+- `didPrepare` (upload source maps)
 - `didDeploy` (send information about deploy to honeybadger)
 
 ## Configuration Options
 
 For detailed information on how configuration of plugins works, please refer to the [Plugin Documentation][7].
 
-### accessToken (required)
+### apiKey (required)
 
-honeybadger client access token to trigger errors.
-
-### accessServerToken (required)
-
-honeybadger server access token to allow uploading source maps to your account.
+Your honeybadger API Key.
 
 ### minifiedPrependUrl (required)
 
@@ -73,32 +97,20 @@ minifiedPrependUrl: function(context) {
 }
 ```
 
-### enabled
-
-Defines internal `enabled` honeybadger config.
-
-*Default:* `true`
-*Alternatives:* `false`
-
 ### environment
 
 Defines internal `environment` honeybadger config.
 
 *Default:* environment setting from ember-cli-deploy-build || `production`
+
 *Alternatives:* any other env
-
-### captureUncaught
-
-Defines internal `captureUncaught` honeybadger config.
-
-*Default:* `true`
-*Alternatives:* `false`
 
 ### username
 
 honeybadger `local_username` config that is displayed in Deploys section.
 
-*Default:* `unknown user`
+*Default:* `null`
+
 *Alternatives:* any string or function returning string
 
 ### honeybadgerFileURI
@@ -106,6 +118,7 @@ honeybadger `local_username` config that is displayed in Deploys section.
 Defines the URI to download the honeybadger JS file.
 
 *Default:* `//js.honeybadger.io/v0.5/honeybadger.min.js`
+
 *Alternatives:* any string that points to the file (e.g. https://mycdn.com/js/honeybadger.min.js)
 
 ### additionalFiles
@@ -115,6 +128,7 @@ Defines additional sourcemap files to be uploaded to honeybadger. Use this if yo
 Set to an array of filenames excluding their extentions. For example in an app that builds `exta-functionality.js` and `additional-library.js` set to `['exta-functionality', 'additional-library']`.
 
 *Default:* `[]`
+
 *Alternatives:* an array of filenames without extensions
 
 ## Prerequisites
@@ -132,13 +146,12 @@ The following properties are expected to be present on the deployment `context` 
 
 ## Known issues
 * You must enable source maps in your `ember-cli-build.js` file, even in `production` env. However, you don't need to upload them anywhere (they won't be available online) - they are only needed during `upload` phase in deploy pipeline.
-* If you are using gzipping, make sure that you are not gzipping source maps - honeybadger will not accept gzipped files.
-* If you bump in any other issue in your deployment flow, give me a sign and I'll try to make this addon more flexible for you.
 
-[1]: http://ember-cli-deploy.com/docs/v0.6.x/ "Plugin Documentation"
+[1]: http://ember-cli-deploy.com/docs/v1.0.x/ "Plugin Documentation"
 [2]: https://github.com/ember-cli-deploy/ember-cli-deploy-build "ember-cli-deploy-build"
 [3]: https://github.com/ember-cli/ember-cli-deploy "ember-cli-deploy"
 [4]: https://github.com/ember-cli-deploy/ember-cli-deploy-revision-data "ember-cli-deploy-revision-data"
 [5]: https://docs.honeybadger.io/guides/source-maps.html "honeybadger Documentation"
-[6]: http://ember-cli-deploy.com/docs/v0.6.x/pipeline-hooks/ "Plugin Documentation"
-[7]: http://ember-cli-deploy.com/docs/v0.6.x/configuration-overview/ "Plugin Documentation"
+[6]: http://ember-cli-deploy.com/docs/v1.0.x/pipeline-hooks/ "Plugin Documentation"
+[7]: http://ember-cli-deploy.com/docs/v1.0.x/configuration-overview/ "Plugin Documentation"
+
