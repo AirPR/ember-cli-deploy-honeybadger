@@ -1,5 +1,4 @@
-
-# ember-cli-deploy-honeybadger
+# ember-cli-deploy-honeybadger [![Build Status](https://travis-ci.org/adibairpr/ember-cli-deploy-honeybadger.svg?branch=master)](https://travis-ci.org/adibairpr/ember-cli-deploy-honeybadger)
 
 > An ember-cli-deploy plugin that first __integrates honeybadger to your application__ and second __uploads your source maps to honeybadger__.
 
