@@ -6,13 +6,15 @@
     "test": "tests"
   },
   "scripts": {
+    "lint:js": "eslint ./*.js addon addon-test-support app blueprints config lib server test-support tests",
     "build": "ember build",
     "start": "ember server",
-    "test": "ember test"
+    "test": "ember test",
+    "test:all": "ember try:each"
   },
   "repository": "https://github.com/AirPR/ember-cli-deploy-honeybadger",
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 8.*"
   },
   "author": "AirPR",
   "license": "MIT",

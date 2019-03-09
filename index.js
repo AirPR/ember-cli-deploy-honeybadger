@@ -19,30 +19,34 @@ module.exports = {
   createDeployPlugin: function(options) {
     var DeployPlugin = BasePlugin.extend({
       name: options.name,
-      runAfter:  ['revision-data'],
-      requiredConfig: ['apiKey', 'minifiedPrependUrl'],
+      init() {
+        this._super.init.apply(this, arguments);
 
-      defaultConfig: {
-        projectName: function(context) {
-          return context.project.pkg.name;
-        },
-        revisionKey: function(context) {
-          return context.revisionData && context.revisionData.revisionKey;
-        },
-        distFiles: function(context) {
-          return context.distFiles;
-        },
-        distDir: function(context) {
-          return context.distDir;
-        },
-        environment: function(context) {
-          var honeybadgerConfig = context.config.honeybadger.honeybadgerConfig;
-          var buildConfig = context.config.build;
-          var environment = honeybadgerConfig ? honeybadgerConfig.environment : false;
-          return environment || buildConfig.environment || 'production';
-        },
-        additionalFiles: [],
-        honeybadgerFileURI: '//js.honeybadger.io/v0.5/honeybadger.min.js'
+        this.runAfter = ['revision-data'];
+        this.requiredConfig = ['apiKey', 'minifiedPrependUrl'];
+
+        this.defaultConfig = {
+          projectName(context) {
+            return context.project.pkg.name;
+          },
+          revisionKey(context) {
+            return context.revisionData && context.revisionData.revisionKey;
+          },
+          distFiles(context) {
+            return context.distFiles;
+          },
+          distDir(context) {
+            return context.distDir;
+          },
+          environment(context) {
+            var honeybadgerConfig = context.config.honeybadger.honeybadgerConfig;
+            var buildConfig = context.config.build;
+            var environment = honeybadgerConfig ? honeybadgerConfig.environment : false;
+            return environment || buildConfig.environment || 'production';
+          },
+          additionalFiles: [],
+          honeybadgerFileURI: '//js.honeybadger.io/v0.5/honeybadger.min.js'
+        };
       },
 
       prepare: function(context) {
@@ -110,7 +114,7 @@ module.exports = {
               formData: formData
             }));
           });
-        };
+        }
 
         this.log('Uploading files...', {verbose: true});
         return RSVP.all(promiseArray);
