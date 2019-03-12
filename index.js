@@ -5,7 +5,7 @@ var BasePlugin = require('ember-cli-deploy-plugin');
 var RSVP = require('rsvp');
 var fs = require('fs');
 var path = require('path');
-var template = require('lodash/string/template');
+var template = require('lodash.template');
 var minimatch = require('minimatch');
 var request = require('request-promise');
 
