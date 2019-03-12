@@ -120,11 +120,15 @@ module.exports = {
         return RSVP.all(promiseArray);
       },
 
-      didDeploy: function() {
+      didDeploy: function(context) {
         var deploy = {
-          environment: this.readConfig('environment'),
-          revision: this.readConfig('revisionKey')
+          environment: this.readConfig('environment')
         };
+
+        var sha = context.revisionData && context.revisionData.scm && context.revisionData.scm.sha;
+        if(sha){
+          deploy.revision = sha;
+        }
 
         var username = this.readConfig('username');
         if(username){
