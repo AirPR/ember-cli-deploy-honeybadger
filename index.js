@@ -29,9 +29,6 @@ module.exports = {
           projectName(context) {
             return context.project.pkg.name;
           },
-          revisionKey(context) {
-            return context.revisionData && context.revisionData.revisionKey;
-          },
           distFiles(context) {
             return context.distFiles;
           },
@@ -43,6 +40,11 @@ module.exports = {
             var buildConfig = context.config.build;
             var environment = honeybadgerConfig ? honeybadgerConfig.environment : false;
             return environment || buildConfig.environment || 'production';
+          },
+          gitCommit(context){
+            return context.revisionData &&
+                   context.revisionData.scm &&
+                   context.revisionData.scm.sha;
           },
           additionalFiles: [],
           honeybadgerFileURI: '//js.honeybadger.io/v0.5/honeybadger.min.js'
@@ -57,7 +59,7 @@ module.exports = {
         var honeybadgerSnippet = template(htmlContent)({
           apiKey: this.readConfig('apiKey'),
           environment: this.readConfig('environment'),
-          revision: this.readConfig('revisionKey'),
+          revision: this.readConfig('gitCommit'),
           jsFile: this.readConfig('honeybadgerFileURI')
         });
 
@@ -102,7 +104,7 @@ module.exports = {
             var formData = {
               name: url + projectFileJs[i],
               api_key: this.readConfig('apiKey'),
-              revision: this.readConfig('revisionKey'),
+              revision: this.readConfig('gitCommit'),
               minified_url: url + projectFileJs[i],
               source_map: fs.createReadStream(mapFilePath),
               minified_file: fs.createReadStream(jsFilePath)
@@ -122,13 +124,9 @@ module.exports = {
 
       didDeploy: function(context) {
         var deploy = {
-          environment: this.readConfig('environment')
+          environment: this.readConfig('environment'),
+          revision: this.readConfig('gitCommit')
         };
-
-        var sha = context.revisionData && context.revisionData.scm && context.revisionData.scm.sha;
-        if(sha){
-          deploy.revision = sha;
-        }
 
         var username = this.readConfig('username');
         if(username){
